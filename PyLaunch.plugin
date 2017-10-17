@@ -1,0 +1,9 @@
+[Plugin]
+Loader=python3
+Module=pylaunch
+Name=PyLaunch
+Description=Quick Launcher
+Authors=Lachlan de Waard <lachlan.00@gmail.com>
+Copyright=Copyright © 2017 Lachlan de Waard
+Website=https://github.com/lachlan-00
+Icon=start-here-symbolic
