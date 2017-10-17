@@ -36,17 +36,8 @@ from gi.repository import Budgie, GObject, Wnck, Gtk, Gdk
 from xdg.BaseDirectory import xdg_config_dirs
 
 CONFIG = xdg_config_dirs[0] + '/quickwin.conf'
-#UI_FILE = '/usr/share/quickwin/main.ui'
-UI_FILE = 'main.ui'
-#ICON_DIR = '/usr/share/icons/gnome/'
-#TRAY_ICON = '/usr/share/pixmaps/quickwin.png'
-#TRAY_ICON = '/usr/share/icons/gnome/scalable/actions/system-run-symbolic.svg'
-#TRAY_ICON = '/usr/share/icons/gnome/32x32/actions/system-run.png'
-#CUSTOM_ICON = None
 USER_HOME = os.getenv('HOME')
 QUICK_STORE = USER_HOME + '/.local/share/quicklaunch'
-#CUSTOM_PATH = None
-#CUSTOM_TITLE = None
 WINDOWOPEN = False
 WINDOWSPOSITION = None
 
@@ -69,6 +60,19 @@ class PyLaunch(GObject.GObject, Budgie.Plugin):
             BudgiePanelManager, and is used for lifetime tracking.
         """
         return PyLaunchApplet(uuid)
+
+#class BudgieMenuSettings(GTK.Grid):
+#    def __init__(self):
+#        """ NOT sure? """
+#        self.builder = Gtk.Builder()
+#        self.builder.add_from_file('settings.ui')
+#        self.builder.connect_signals(self)
+#        self.pickbutton = self.builder.get_object('button_icon_pick')
+#        self.pickentry = self.builder.get_object('entry_icon_pick')
+#        self.BudgieMenuSettings(settings)
+
+#    def BudgieMenuSettings(self, settings):
+#        self.settings = settings
 
 class PyLaunchApplet(Budgie.Applet):
     """ Budgie.Applet is in fact a Gtk.Bin """
@@ -98,7 +102,7 @@ class PyLaunchApplet(Budgie.Applet):
 
         """ start pylaunch """
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(UI_FILE)
+        self.builder.add_from_file('/usr/lib/budgie-desktop/plugins/main.ui')
         self.builder.connect_signals(self)
         # get config info
         self.conf = configparser.RawConfigParser()
@@ -109,15 +113,8 @@ class PyLaunchApplet(Budgie.Applet):
         self.current_dir = self.homefolder
         self.current_files = None
         self.filelist = None
-        # Make a status icon
-        # Set custom icon
-        #self.statusicon.connect('activate', self.status_clicked)
-        #self.statusicon.connect('popup-menu', self.right_click_event)
-        #self.statusicon.set_tooltip_text("pylaunch")
         # load main window items
         self.window = self.builder.get_object('main_window')
-        #self.window.set_parent(self.statusicon)
-        #self.window.set_modal(True)
         self.addbutton = self.builder.get_object('addbutton')
         self.addimage = self.builder.get_object('addimage')
         self.settingsbutton = self.builder.get_object('settingsbutton')
@@ -175,22 +172,12 @@ class PyLaunchApplet(Budgie.Applet):
         self.window.connect('destroy', self.quit)
         # self.window.connect('key-release-event', self.shortcatch)
         self.settingsbutton.connect('clicked', self.showconfig)
-        #self.addbutton.connect('clicked', self.showaddconnection)
-        #self.closemain.connect('clicked', self.quit)
-        # images
-        #self.addimage.set_from_file(ICON_DIR + '16x16/actions/add.png')
-        #self.addimage.add.Gtk.Image.new_from_icon_name("gtk-add", Gtk.IconSize.BUTTON)
         # config window actions
         self.applybutton.connect('clicked', self.saveconf)
         self.closebutton.connect('clicked', self.closeconf)
-        # add window actions
-        #self.saveaddbutton.connect('clicked', self.saveadd)
-        #self.closeaddbutton.connect('clicked', self.closeadd)
-        # popup window actions
-        #self.popbutton.connect('clicked', self.closepop)
         # set up file and folder lists
         cell = Gtk.CellRendererText()
-        filecolumn = Gtk.TreeViewColumn('PyLaunch Chortcuts', cell, text=0)
+        filecolumn = Gtk.TreeViewColumn('PyLaunch Shortcuts', cell, text=0)
         self.contenttree.connect('row-activated', self.loadselection)
         self.contenttree.connect('button-release-event', self.buttonclick)
         self.contenttree.append_column(filecolumn)
@@ -212,9 +199,7 @@ class PyLaunchApplet(Budgie.Applet):
         except configparser.NoOptionError:
             # config missing value
             pass
-        #self.showme(self.window)
         self.show_all()
-        #Gtk.main()
 
     def buttonclick(self, actor, event):
         """ Catch mouse clicks"""
@@ -238,31 +223,14 @@ class PyLaunchApplet(Budgie.Applet):
         args[0].hide()
 
     def right_click_event(self, icon, button, time):
-        #self.menu = Gtk.Menu()
-
-        #quit = Gtk.MenuItem()
-        #quit.set_label("Quit")
-
-        #quit.connect("activate", Gtk.main_quit)
-
-        #self.menu.append(quit)
-        #self.menu.show_all()
-
-        #def pos(self, button, menu, icon):
-        #        return (Gtk.StatusIcon.position_menu(self, button, menu, icon))
-
-        #self.menu.popup(None, None, pos, self.buttonclick, button, time)
         return
 
     def status_clicked(self, status):
         """ hide and unhide the window when clicking the status icon """
         global WINDOWOPEN
         # Unhide the window
-        #print(dir(self.statusicon))
         if not WINDOWOPEN:
             self.window.show()
-            #self.window.do_popup_menu()
-            #self.window.popup()
             WINDOWOPEN = True
             # save window position
             self.conf.set('conf', 'root_x', self.window.get_position().root_x)
@@ -282,9 +250,6 @@ class PyLaunchApplet(Budgie.Applet):
     def delete_event(self, window, event):
         """ Hide the window then the close button is clicked """
         global WINDOWOPEN
-        # Don't delete; hide instead
-        #print(window)
-        #print(event)
         self.window.hide_on_delete()
         WINDOWOPEN = False
         return True
@@ -366,12 +331,6 @@ class PyLaunchApplet(Budgie.Applet):
             print('relisting directory')
             self.listfiles(self.current_dir)
         return
-
-    # def shortcatch(self, actor, event):
-    #    """ capture keys for shortcuts """
-    #    test_mask = (event.state & Gdk.ModifierType.CONTROL_MASK ==
-    #                 Gdk.ModifierType.CONTROL_MASK)
-    #    #if event.get_state() and test_mask:
 
     def quit(self, *args):
         """ stop the process thread and close the program"""
