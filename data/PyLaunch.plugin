@@ -1,6 +1,6 @@
 [Plugin]
 Loader=python3
-Module=pylaunch
+Module=budgie-quicklaunch
 Name=PyLaunch
 Description=Quick Launcher
 Authors=Lachlan de Waard <lachlan.00@gmail.com>

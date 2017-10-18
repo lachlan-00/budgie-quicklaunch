@@ -30,24 +30,24 @@ import sys
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Budgie', '1.0')
-gi.require_version('Wnck', '3.0')
-from gi.repository import Budgie, GObject, Wnck, Gtk, Gdk
+from gi.repository import Budgie, GObject, Gio, Gtk, Gdk
 
-from xdg.BaseDirectory import xdg_config_dirs
+#from xdg.BaseDirectory import xdg_config_dirs
 
-CONFIG = xdg_config_dirs[0] + '/quickwin.conf'
+#self.config = xdg_config_dirs[0] + '/quickwin.conf'
 USER_HOME = os.getenv('HOME')
 QUICK_STORE = USER_HOME + '/.local/share/quicklaunch'
 WINDOWOPEN = False
 WINDOWSPOSITION = None
+UUID = None
 
-class PyLaunch(GObject.GObject, Budgie.Plugin):
+class BudgieQuicklaunch(GObject.GObject, Budgie.Plugin):
     """ This is simply an entry point into your Budgie Applet implementation.
         Note you must always override Object, and implement Plugin.
     """
 
     # Good manners, make sure we have unique name in GObject type system
-    __gtype_name__ = "PyLaunch"
+    __gtype_name__ = "budgie-quicklaunch"
 
     def __init__(self):
         """ Initialisation is important.
@@ -61,53 +61,71 @@ class PyLaunch(GObject.GObject, Budgie.Plugin):
         """
         return PyLaunchApplet(uuid)
 
-#class BudgieMenuSettings(GTK.Grid):
-#    def __init__(self):
-#        """ NOT sure? """
-#        self.builder = Gtk.Builder()
-#        self.builder.add_from_file('settings.ui')
-#        self.builder.connect_signals(self)
-#        self.pickbutton = self.builder.get_object('button_icon_pick')
-#        self.pickentry = self.builder.get_object('entry_icon_pick')
-#        self.BudgieMenuSettings(settings)
+class PyLaunchSettings(Gtk.Grid):
+    def __init__(self, setting):
+        super().__init__(row_spacing=8)
+        global UUID
+        self.uuid = UUID
+        self.setting = setting
 
-#    def BudgieMenuSettings(self, settings):
-#        self.settings = settings
+        label = Gtk.Label(_("Launcher Folder"), halign=Gtk.Align.START)
+        chooser = Gtk.FileChooserButton()
+        chooser.set_title('Select a Folder with Executables')
+        entry = Gtk.Entry()
+        entry.set_text(setting.get_string("folder-path"))
+        #print(dir(setting))
+        chooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
+        chooser.set_current_folder(setting.get_string("folder-path"))
+        self.add(label)
+        #self.add(chooser)
+        self.add(entry)
+        try:
+            setting.bind("folder-path", entry, 'text',
+                         Gio.SettingsBindFlags.DEFAULT)
+            #setting.bind("folder-path", chooser, 'text',
+            #             Gio.SettingsBindFlags.DEFAULT)
+        except AttributeError as e:
+            print(e)
+            pass
+        self.show_all()
+
 
 class PyLaunchApplet(Budgie.Applet):
     """ Budgie.Applet is in fact a Gtk.Bin """
-
-    #wn_screen = None
-    button = None
-
     def __init__(self, uuid):
         Budgie.Applet.__init__(self)
+        self.uuid = uuid
+        self.manager = None
+        self.defaults = {}
+
+        # Ensure schema and prefix is set properly
+        self.set_settings_prefix("/org/lachlandewaard/budgie-quicklaunch")
+        self.set_settings_schema("org.lachlandewaard.budgie-quicklaunch")
+        self.settings = self.get_applet_settings(self.uuid)
 
         # Add a button to our UI
         self.button = Gtk.ToggleButton.new()
         self.button.set_relief(Gtk.ReliefStyle.NONE)
         self.button.set_active(False)
         self.add(self.button)
-        #self.wn_screen = Wnck.Screen.get_default()
 
         img = Gtk.Image.new_from_icon_name("start-here-symbolic", Gtk.IconSize.BUTTON)
         self.button.add(img)
         self.button.set_tooltip_text("Quicklauncher (from Python!)")
 
-
-        # Hook up Wnck signals
-        #self.wn_screen.connect_after('showing-desktop-changed', self.scr_changed)
+        # Hook up Applet button signals
         self.button.connect_after('clicked', self.status_clicked)
         self.button.connect_after('popup-menu', self.right_click_event)
 
         """ start pylaunch """
+        self.config = os.getenv('HOME') + '/.config/quicklaunch-' + self.uuid + '.conf'
         self.builder = Gtk.Builder()
-        self.builder.add_from_file('/usr/lib/budgie-desktop/plugins/main.ui')
+        self.builder.add_from_file('/usr/lib/budgie-desktop/plugins/budgie-quicklaunch/main.ui')
         self.builder.connect_signals(self)
         # get config info
         self.conf = configparser.RawConfigParser()
         self.checkconfig()
-        self.conf.read(CONFIG)
+        self.conf.read(self.config)
         self.homefolder = self.conf.get('conf', 'home')
         # backwards compatability for new config options
         self.current_dir = self.homefolder
@@ -122,12 +140,6 @@ class PyLaunchApplet(Budgie.Applet):
         # self.fileview = self.builder.get_object('fileview')
         self.contentlist = self.builder.get_object('filestore')
         self.contenttree = self.builder.get_object('fileview')
-        # load add connection window items
-        self.addwindow = self.builder.get_object('add_window')
-        self.addentry = self.builder.get_object('addentry')
-        self.addcommand = self.builder.get_object('cmdentry')
-        self.saveaddbutton = self.builder.get_object('saveaddbutton')
-        self.closeaddbutton = self.builder.get_object('closeaddbutton')
         # load config window items
         self.confwindow = self.builder.get_object('config_window')
         self.homeentry = self.builder.get_object('homeentry')
@@ -141,10 +153,22 @@ class PyLaunchApplet(Budgie.Applet):
         self.listfiles(self.current_dir)
         self.run()
 
+    def do_get_settings_ui(self):
+        """Return the applet settings with given uuid"""
+        global UUID
+        UUID = self.uuid
+        return PyLaunchSettings(self.get_applet_settings(self.uuid))
+
+    def do_supports_settings(self):
+        """Return True if support setting through Budgie Setting,
+        False otherwise.
+        """
+        return True
+
     def checkconfig(self):
         """ create a default config if not available """
-        if not os.path.isfile(CONFIG):
-            conffile = open(CONFIG, "w")
+        if not os.path.isfile(self.config):
+            conffile = open(self.config, "w")
             conffile.write('[conf]\nhome = ' + QUICK_STORE + '\n' +
                        'root_x = \n' +
                        'root_y = \n' +
@@ -153,7 +177,7 @@ class PyLaunchApplet(Budgie.Applet):
             conffile.close()
         else:
             conf = configparser.RawConfigParser()
-            conf.read(CONFIG)
+            conf.read(self.config)
             if not conf.has_section('home'):
                 conf.add_section('home')
             if not conf.has_section('root_x'):
@@ -164,7 +188,7 @@ class PyLaunchApplet(Budgie.Applet):
                 conf.add_section('width')
             if not conf.has_section('height'):
                 conf.add_section('height')
-        return
+        return self.uuid
 
     def connectui(self):
         """ connect all the window wisgets """
@@ -232,20 +256,24 @@ class PyLaunchApplet(Budgie.Applet):
         if not WINDOWOPEN:
             self.window.show()
             WINDOWOPEN = True
-            # save window position
-            self.conf.set('conf', 'root_x', self.window.get_position().root_x)
-            self.conf.set('conf', 'root_y', self.window.get_position().root_y)
-            self.conf.set('conf', 'width', self.window.get_size().width)
-            self.conf.set('conf', 'height', self.window.get_size().height)
-            self.writeconf()
+            self.save_position()
         elif WINDOWOPEN:
-            self.conf.set('conf', 'root_x', self.window.get_position().root_x)
-            self.conf.set('conf', 'root_y', self.window.get_position().root_y)
-            self.conf.set('conf', 'width', self.window.get_size().width)
-            self.conf.set('conf', 'height', self.window.get_size().height)
-            self.writeconf()
+            self.save_position()
             self.delete_event(self, self.window)
         return status
+
+    def save_position(self):
+        """ save the main window position """
+        global WINDOWOPEN
+        if WINDOWOPEN:
+            self.conf.read(self.config)
+            self.conf.set('conf', 'root_x', self.window.get_position().root_x)
+            self.conf.set('conf', 'root_y', self.window.get_position().root_y)
+            self.conf.set('conf', 'width', self.window.get_size().width)
+            self.conf.set('conf', 'height', self.window.get_size().height)
+            self.writeconf()
+            self.conf.read(self.config)
+        return
 
     def delete_event(self, window, event):
         """ Hide the window then the close button is clicked """
@@ -257,19 +285,16 @@ class PyLaunchApplet(Budgie.Applet):
     def showconfig(self, actor):
         """ fill and show the config window """
         if actor == self.settingsbutton:
+            self.save_position()
+            print('Loading ' + self.config)
             self.homeentry.set_text(self.homefolder)
             self.showme(self.confwindow)
         return actor
 
-    def showaddconnection(self, actor):
-        """ show the add connection window """
-        self.homeentry.set_text(self.homefolder)
-        self.showme(self.addwindow)
-        return actor
 
     def writeconf(self):
         """ write to conf file """
-        conffile = open(CONFIG, "w")
+        conffile = open(self.config, "w")
         self.conf.write(conffile)
         conffile.close()
         return
@@ -277,30 +302,21 @@ class PyLaunchApplet(Budgie.Applet):
     def saveconf(self, actor):
         """ save any config changes and update live settings"""
         if actor == self.applybutton:
-            self.conf.read(CONFIG)
+            self.conf.read(self.config)
             self.conf.set('conf', 'home', self.homeentry.get_text())
             self.homefolder = self.homeentry.get_text()
             self.writeconf()
+            self.listfiles(self.current_dir)
         return
-
-    def saveadd(self, *args):
-        """ save any config changes and update live settings"""
-        print("SAVE ADD")
-        print(self.addentry.get_text())
-        print(self.addcommand.get_text())
-        return args
 
     def closeconf(self, actor):
         """ hide the config window """
         if actor == self.closebutton:
+            self.save_position()
+            self.conf.read(self.config)
+            self.current_dir = self.conf.get('conf', 'home')
             self.hideme(self.confwindow)
-        return
-
-    def closeadd(self, actor):
-        """ refresh the file list and hide the config window """
-        self.listfiles(self.current_dir)
-        if actor == self.closeaddbutton:
-            self.hideme(self.addwindow)
+            self.listfiles(self.current_dir)
         return
 
     def closepop(self, actor):
@@ -311,6 +327,7 @@ class PyLaunchApplet(Budgie.Applet):
 
     def loadselection(self, *args):
         """ load selected files into tag editor """
+        global WINDOWOPEN
         contenttree = args[0]
         model, fileiter = contenttree.get_selection().get_selected_rows()
         self.current_files = []
@@ -327,6 +344,8 @@ class PyLaunchApplet(Budgie.Applet):
             print("Opening selected file")
             print(self.current_files)
             subprocess.Popen(self.current_files)
+            # Hide and deactivate applet button after selection
+            self.button.set_active(False)
         else:
             print('relisting directory')
             self.listfiles(self.current_dir)
@@ -335,7 +354,6 @@ class PyLaunchApplet(Budgie.Applet):
     def quit(self, *args):
         """ stop the process thread and close the program"""
         # destroy windows and quit
-        self.addwindow.destroy()
         self.confwindow.destroy()
         self.window.destroy()
         Gtk.main_quit(*args)
@@ -368,12 +386,4 @@ class PyLaunchApplet(Budgie.Applet):
         if len(self.contentlist) == 0:
             self.contentlist.append(['[No files found]'])
         return
-
-    def scr_changed(self, wscr, udata=None):
-        """ WnckScreen changed, update button """
-        self.button.set_active(self.wn_screen.get_showing_desktop())
-
-    def on_clicked(self, widg, data=None):
-        """ User clicked our button, update WnckScreen """
-        self.wn_screen.toggle_showing_desktop(self.button.get_active())
 

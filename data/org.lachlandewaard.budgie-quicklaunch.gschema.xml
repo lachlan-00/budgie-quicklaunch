@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="budgie-quicklaunch">
+  <schema id="org.lachlandewaard.budgie-quicklaunch">
+
+    <key type="s" name="folder-path">
+      <default>'/usr/bin'</default>
+      <summary>Folder Path</summary>
+      <description>Folder path of executable files</description>
+    </key>
+  </schema>
+
+</schemalist>

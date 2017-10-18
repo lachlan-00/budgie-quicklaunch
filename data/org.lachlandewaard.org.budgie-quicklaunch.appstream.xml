@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="addon">
+  <id>org.lachlandewaard.budgie-quicklaunch</id>
+  <pkgname>budgie-quicklaunch</pkgname>
+  <translation type="gettext">budgie-quicklaunch</translation>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0+</project_license>
+  <name>Budgie Quicklaunch Applet</name>
+  <summary>Simple applet to load executable files from a specified folder</summary>
+  <description>
+    <p>
+    Budgie Quicklaunch Applet is an addon for Budgie Desktop to allow the quick execution of regular apps.
+    </p>
+    <p>
+    These files must not be desktop files and must be executable.
+    </p>
+    <p>
+    Features of the applet:
+    </p>
+    <ul>
+      <li>Folder Selection</li>
+      <li>Notification</li>
+    </ul>
+  </description>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/yursan9/budgie-caffeine-applet/master/img/initial-applet.png</image>
+    </screenshot>
+  </screenshots>
+  <url type="homepage">https://github.com/lachlan-00/budgie-quicklaunch</url>
+  <url type="bugtracker">https://github.com/lachlan-00/budgie-quicklaunch/issues</url>
+  <url type="translate">https://www.transifex.com/</url>
+  <url type="donation"></url>
+  <developer_name>Lachlan de Waard</developer_name>
+  <updatecontact>lachlan.00@gmail.com</updatecontact>
+</component>
