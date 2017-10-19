@@ -7,6 +7,33 @@
       <summary>Folder Path</summary>
       <description>Folder path of executable files</description>
     </key>
-  </schema>
 
+    <key type='i' name='root-x'>
+      <summary>X position on your screen</summary>
+      <description>Used to monitor your last position</description>
+      <default>100</default>
+      <range min='-10000' max='10000'/>
+    </key>
+
+    <key type='i' name='root-y'>
+      <summary>Y position on your screen</summary>
+      <description>Used to monitor your last position</description>
+      <default>100</default>
+      <range min='-10000' max='10000'/>
+    </key>
+
+    <key type='i' name='width'>
+      <summary>Width of the launcher window</summary>
+      <description>Used to monitor your window size</description>
+      <default>200</default>
+      <range min='100' max='10000'/>
+    </key>
+
+    <key type='i' name='height'>
+      <summary>Height of the launcher window</summary>
+      <description>Used to monitor your window size</description>
+      <default>600</default>
+      <range min='100' max='10000'/>
+    </key>
+  </schema>
 </schemalist>

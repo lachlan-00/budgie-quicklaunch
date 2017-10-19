@@ -67,23 +67,17 @@ class PyLaunchSettings(Gtk.Grid):
         global UUID
         self.uuid = UUID
         self.setting = setting
-
-        label = Gtk.Label(_("Launcher Folder"), halign=Gtk.Align.START)
-        chooser = Gtk.FileChooserButton()
-        chooser.set_title('Select a Folder with Executables')
+        label = Gtk.Label(_("Launcher Path"), halign=Gtk.Align.START)
         entry = Gtk.Entry()
+        entry.set_width_chars(40)
         entry.set_text(setting.get_string("folder-path"))
-        #print(dir(setting))
-        chooser.set_action(Gtk.FileChooserAction.SELECT_FOLDER)
-        chooser.set_current_folder(setting.get_string("folder-path"))
+
         self.add(label)
-        #self.add(chooser)
         self.add(entry)
+
         try:
             setting.bind("folder-path", entry, 'text',
                          Gio.SettingsBindFlags.DEFAULT)
-            #setting.bind("folder-path", chooser, 'text',
-            #             Gio.SettingsBindFlags.DEFAULT)
         except AttributeError as e:
             print(e)
             pass
@@ -96,7 +90,6 @@ class PyLaunchApplet(Budgie.Applet):
         Budgie.Applet.__init__(self)
         self.uuid = uuid
         self.manager = None
-        self.defaults = {}
 
         # Ensure schema and prefix is set properly
         self.set_settings_prefix("/org/lachlandewaard/budgie-quicklaunch")
@@ -118,39 +111,40 @@ class PyLaunchApplet(Budgie.Applet):
         self.button.connect_after('popup-menu', self.right_click_event)
 
         """ start pylaunch """
-        self.config = os.getenv('HOME') + '/.config/quicklaunch-' + self.uuid + '.conf'
+        #self.config = os.getenv('HOME') + '/.config/quicklaunch-' + self.uuid + '.conf'
         self.builder = Gtk.Builder()
         self.builder.add_from_file('/usr/lib/budgie-desktop/plugins/budgie-quicklaunch/main.ui')
         self.builder.connect_signals(self)
         # get config info
-        self.conf = configparser.RawConfigParser()
+        #self.conf = configparser.RawConfigParser()
         self.checkconfig()
-        self.conf.read(self.config)
-        self.homefolder = self.conf.get('conf', 'home')
+        #self.conf.read(self.config)
+        #self.homefolder = self.conf.get('conf', 'home')
+        #self.homefolder = self.settings.get_string("folder-path")
         # backwards compatability for new config options
-        self.current_dir = self.homefolder
+        #self.current_dir = self.homefolder
         self.current_files = None
         self.filelist = None
         # load main window items
         self.window = self.builder.get_object('main_window')
-        self.addbutton = self.builder.get_object('addbutton')
-        self.addimage = self.builder.get_object('addimage')
-        self.settingsbutton = self.builder.get_object('settingsbutton')
-        self.closemain = self.builder.get_object('closemain')
+        #self.addbutton = self.builder.get_object('addbutton')
+        #self.addimage = self.builder.get_object('addimage')
+        #self.settingsbutton = self.builder.get_object('settingsbutton')
+        #self.closemain = self.builder.get_object('closemain')
         # self.fileview = self.builder.get_object('fileview')
         self.contentlist = self.builder.get_object('filestore')
         self.contenttree = self.builder.get_object('fileview')
         # load config window items
-        self.confwindow = self.builder.get_object('config_window')
-        self.homeentry = self.builder.get_object('homeentry')
-        self.applybutton = self.builder.get_object('applyconf')
-        self.closebutton = self.builder.get_object('closeconf')
+        #self.confwindow = self.builder.get_object('config_window')
+        #self.homeentry = self.builder.get_object('homeentry')
+        #self.applybutton = self.builder.get_object('applyconf')
+        #self.closebutton = self.builder.get_object('closeconf')
         # load popup window items
         self.popwindow = self.builder.get_object('popup_window')
         self.popbutton = self.builder.get_object('closepop')
         # create lists and connect actions
         self.connectui()
-        self.listfiles(self.current_dir)
+        self.listfiles(self.settings.get_string("folder-path"))
         self.run()
 
     def do_get_settings_ui(self):
@@ -167,38 +161,39 @@ class PyLaunchApplet(Budgie.Applet):
 
     def checkconfig(self):
         """ create a default config if not available """
-        if not os.path.isfile(self.config):
-            conffile = open(self.config, "w")
-            conffile.write('[conf]\nhome = ' + QUICK_STORE + '\n' +
-                       'root_x = \n' +
-                       'root_y = \n' +
-                       'width = \n' +
-                       'height = \n')
-            conffile.close()
-        else:
-            conf = configparser.RawConfigParser()
-            conf.read(self.config)
-            if not conf.has_section('home'):
-                conf.add_section('home')
-            if not conf.has_section('root_x'):
-                conf.add_section('root_x')
-            if not conf.has_section('root_y'):
-                conf.add_section('root_y')
-            if not conf.has_section('width'):
-                conf.add_section('width')
-            if not conf.has_section('height'):
-                conf.add_section('height')
+        #if not os.path.isfile(self.config):
+        #    conffile = open(self.config, "w")
+        #    conffile.write('[conf]\nhome = ' + QUICK_STORE + '\n' +
+        #               'root_x = \n' +
+        #               'root_y = \n' +
+        #               'width = \n' +
+        #               'height = \n')
+        #    conffile.close()
+        #else:
+        #    conf = configparser.RawConfigParser()
+        #    conf.read(self.config)
+        #    if not conf.has_section('home'):
+        #        conf.add_section('home')
+        #    if not conf.has_section('root_x'):
+        #        conf.add_section('root_x')
+        #    if not conf.has_section('root_y'):
+        #        conf.add_section('root_y')
+        #    if not conf.has_section('width'):
+        #        conf.add_section('width')
+        #    if not conf.has_section('height'):
+        #        conf.add_section('height')
         return self.uuid
 
     def connectui(self):
         """ connect all the window wisgets """
         # main window actions
         self.window.connect('destroy', self.quit)
+        self.window.connect('drag-end', self.save_position)
         # self.window.connect('key-release-event', self.shortcatch)
-        self.settingsbutton.connect('clicked', self.showconfig)
+        #self.settingsbutton.connect('clicked', self.showconfig)
         # config window actions
-        self.applybutton.connect('clicked', self.saveconf)
-        self.closebutton.connect('clicked', self.closeconf)
+        #self.applybutton.connect('clicked', self.saveconf)
+        #self.closebutton.connect('clicked', self.closeconf)
         # set up file and folder lists
         cell = Gtk.CellRendererText()
         filecolumn = Gtk.TreeViewColumn('PyLaunch Shortcuts', cell, text=0)
@@ -207,22 +202,23 @@ class PyLaunchApplet(Budgie.Applet):
         self.contenttree.append_column(filecolumn)
         self.contenttree.set_model(self.contentlist)
         # list default dir on startup
-        if not os.path.isdir(self.homefolder):
-            os.makedirs(self.homefolder)
+        if not os.path.isdir(self.settings.get_string("folder-path")):
+            os.makedirs(self.settings.get_string("folder-path"))
         return
 
     def run(self):
         """ show the main window and start the main GTK loop """
         #self.window.set_position(Gtk.Align.END)
-        try:
-            self.window.move(int(self.conf.get('conf', 'root_x')), int(self.conf.get('conf', 'root_y')))
-            self.window.resize(int(self.conf.get('conf', 'width')), int(self.conf.get('conf', 'height')))
-        except ValueError:
-            # incorrect value for setting
-            pass
-        except configparser.NoOptionError:
-            # config missing value
-            pass
+        self.set_position()
+        #try:
+        #    self.window.move(int(self.conf.get('conf', 'root_x')), int(self.conf.get('conf', 'root_y')))
+        #    self.window.resize(int(self.conf.get('conf', 'width')), int(self.conf.get('conf', 'height')))
+        #except ValueError:
+        #    # incorrect value for setting
+        #    pass
+        #except configparser.NoOptionError:
+        #    # config missing value
+        #    pass
         self.show_all()
 
     def buttonclick(self, actor, event):
@@ -238,12 +234,16 @@ class PyLaunchApplet(Budgie.Applet):
 
     def showme(self, *args):
         """ show a Gtk.Window """
-        self.listfiles(self.current_dir)
+        #self.homefolder = self.settings.get_string("folder-path")
+        #self.current_dir = self.homefolder
+        self.listfiles(self.settings.get_string("folder-path"))
         args[0].show()
 
     def hideme(self, *args):
         """ hide a Gtk.Window """
-        self.listfiles(self.current_dir)
+        #self.homefolder = self.settings.get_string("folder-path")
+        #self.current_dir = self.homefolder
+        self.listfiles(self.settings.get_string("folder-path"))
         args[0].hide()
 
     def right_click_event(self, icon, button, time):
@@ -254,69 +254,93 @@ class PyLaunchApplet(Budgie.Applet):
         global WINDOWOPEN
         # Unhide the window
         if not WINDOWOPEN:
+            self.set_position()
             self.window.show()
             WINDOWOPEN = True
-            self.save_position()
         elif WINDOWOPEN:
-            self.save_position()
             self.delete_event(self, self.window)
         return status
+
+    def set_position(self):
+        """ move the main window to last known position """
+        try:
+            self.window.move(self.settings.get_int("root-x"), self.settings.get_int("root-y"))
+            self.window.resize(self.settings.get_int("width"), self.settings.get_int("height"))
+        except ValueError:
+            # incorrect value for setting
+            pass
+        return
 
     def save_position(self):
         """ save the main window position """
         global WINDOWOPEN
-        if WINDOWOPEN:
-            self.conf.read(self.config)
-            self.conf.set('conf', 'root_x', self.window.get_position().root_x)
-            self.conf.set('conf', 'root_y', self.window.get_position().root_y)
-            self.conf.set('conf', 'width', self.window.get_size().width)
-            self.conf.set('conf', 'height', self.window.get_size().height)
-            self.writeconf()
-            self.conf.read(self.config)
+        self.settings.set_int("root-x", self.window.get_position().root_x)
+        self.settings.set_int("root-y", self.window.get_position().root_y)
+        self.settings.set_int("height", self.window.get_size().height)
+        self.settings.set_int("width", self.window.get_size().width)
+        self.listfiles(self.settings.get_string("folder-path"))
+        print(self.settings.get_string("folder-path"))
+        print(self.settings.get_int("root-x"))
+        print(self.settings.get_int("root-y"))
+        print(self.settings.get_int("height"))
+        print(self.settings.get_int("width"))
+        #if WINDOWOPEN:
+        #    self.conf.read(self.config)
+        #    self.conf.set('conf', 'root_x', self.window.get_position().root_x)
+        #    self.conf.set('conf', 'root_y', self.window.get_position().root_y)
+        #    self.conf.set('conf', 'width', self.window.get_size().width)
+        #    self.conf.set('conf', 'height', self.window.get_size().height)
+        #    self.writeconf()
+        #    self.conf.read(self.config)
         return
 
     def delete_event(self, window, event):
         """ Hide the window then the close button is clicked """
         global WINDOWOPEN
+        self.save_position()
         self.window.hide_on_delete()
         WINDOWOPEN = False
         return True
 
     def showconfig(self, actor):
         """ fill and show the config window """
-        if actor == self.settingsbutton:
-            self.save_position()
-            print('Loading ' + self.config)
-            self.homeentry.set_text(self.homefolder)
-            self.showme(self.confwindow)
+        #if actor == self.settingsbutton:
+        #    self.save_position()
+        #    print('Loading ' + self.config)
+        #    #self.homeentry.set_text(self.homefolder)
+        #    self.showme(self.confwindow)
         return actor
 
 
     def writeconf(self):
         """ write to conf file """
-        conffile = open(self.config, "w")
-        self.conf.write(conffile)
-        conffile.close()
+        #conffile = open(self.config, "w")
+        #self.conf.write(conffile)
+        #conffile.close()
         return
 
     def saveconf(self, actor):
         """ save any config changes and update live settings"""
         if actor == self.applybutton:
-            self.conf.read(self.config)
-            self.conf.set('conf', 'home', self.homeentry.get_text())
-            self.homefolder = self.homeentry.get_text()
-            self.writeconf()
-            self.listfiles(self.current_dir)
+            #self.conf.read(self.config)
+            #self.conf.set('conf', 'home', self.homeentry.get_text())
+            #self.homefolder = self.homeentry.get_text()
+            #self.writeconf()
+            #self.homefolder = self.settings.get_string("folder-path")
+            #self.current_dir = self.homefolder
+            self.listfiles(self.settings.get_string("folder-path"))
         return
 
     def closeconf(self, actor):
         """ hide the config window """
         if actor == self.closebutton:
             self.save_position()
-            self.conf.read(self.config)
-            self.current_dir = self.conf.get('conf', 'home')
-            self.hideme(self.confwindow)
-            self.listfiles(self.current_dir)
+            #self.conf.read(self.config)
+            #self.current_dir = self.conf.get('conf', 'home')
+            #self.hideme(self.confwindow)
+            #self.homefolder = self.settings.get_string("folder-path")
+            #self.current_dir = self.homefolder
+            self.listfiles(self.settings.get_string("folder-path"))
         return
 
     def closepop(self, actor):
@@ -335,7 +359,7 @@ class PyLaunchApplet(Budgie.Applet):
             if model[files][0] == '[No files found]':
                 self.current_files = []
             else:
-                tmp_file = os.path.join(self.current_dir, model[files][0])
+                tmp_file = os.path.join(self.settings.get_string("folder-path"), model[files][0])
                 if os.access(tmp_file, os.X_OK):
                     self.current_files.append(tmp_file)
                 else:
@@ -348,15 +372,17 @@ class PyLaunchApplet(Budgie.Applet):
             self.button.set_active(False)
         else:
             print('relisting directory')
-            self.listfiles(self.current_dir)
+            #self.homefolder = self.settings.get_string("folder-path")
+            #self.current_dir = self.homefolder
+            self.listfiles(self.settings.get_string("folder-path"))
         return
 
     def quit(self, *args):
         """ stop the process thread and close the program"""
         # destroy windows and quit
-        self.confwindow.destroy()
+        #self.confwindow.destroy()
         self.window.destroy()
-        Gtk.main_quit(*args)
+        #Gtk.main_quit(*args)
         return False
 
     def listfiles(self, srcpath):
@@ -366,7 +392,7 @@ class PyLaunchApplet(Budgie.Applet):
             files_dir = os.listdir(srcpath)
             files_dir.sort(key=lambda y: y.lower())
         except OSError:
-            self.listfiles(self.homefolder)
+            #self.listfiles(self.homefolder)
             return
         # clear list if we have scanned before
         for items in self.contentlist:
@@ -377,7 +403,7 @@ class PyLaunchApplet(Budgie.Applet):
         # search the supplied directory for items
         for items in files_dir:
             test_executable = None
-            tmp_file = self.current_dir + '/' + items
+            tmp_file = self.settings.get_string("folder-path") + '/' + items
             test_file = os.path.isfile(tmp_file)
             if test_file:
                 test_executable = os.access(tmp_file, os.X_OK)
