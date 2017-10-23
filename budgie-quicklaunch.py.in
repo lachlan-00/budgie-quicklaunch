@@ -61,23 +61,22 @@ class BudgieQuicklaunch(GObject.GObject, Budgie.Plugin):
 class PyLaunchSettings(Gtk.Grid):
     def __init__(self, setting):
         super().__init__(row_spacing=8)
-        global UUID
-        self.uuid = UUID
         self.setting = setting
+
+        # Settings inferface objects
         label = Gtk.Label(_("Launcher Path"), halign=Gtk.Align.START)
         entry = Gtk.Entry()
         entry.set_width_chars(40)
         entry.set_text(setting.get_string("folder-path"))
 
-        self.add(label)
-        self.add(entry)
+        # Attach to settings grid
+        self.attach(label, 0, 0, 1, 1)
+        self.attach(entry, 0, 1, 2, 1)
 
-        try:
-            setting.bind("folder-path", entry, 'text',
-                         Gio.SettingsBindFlags.DEFAULT)
-        except AttributeError as e:
-            print(e)
-            pass
+        # Bind dconf setting to the entry box
+        setting.bind("folder-path", entry, 'text',
+                     Gio.SettingsBindFlags.DEFAULT)
+
         self.show_all()
 
 
@@ -86,14 +85,13 @@ class PyLaunchApplet(Budgie.Applet):
     def __init__(self, uuid):
         Budgie.Applet.__init__(self)
         self.uuid = uuid
-        self.manager = None
 
         # Ensure schema and prefix is set properly
         self.set_settings_prefix("/org/lachlandewaard/budgie-quicklaunch")
         self.set_settings_schema("org.lachlandewaard.budgie-quicklaunch")
         self.settings = self.get_applet_settings(self.uuid)
 
-        # Add a button to our UI
+        # Add a button to the Budgie panel
         self.button = Gtk.ToggleButton.new()
         self.button.set_relief(Gtk.ReliefStyle.NONE)
         self.button.set_active(False)
@@ -111,41 +109,42 @@ class PyLaunchApplet(Budgie.Applet):
         self.builder = Gtk.Builder()
         self.builder.add_from_file('/usr/lib/budgie-desktop/plugins/budgie-quicklaunch/main.ui')
         self.builder.connect_signals(self)
-        # get config info
         self.current_files = None
         self.filelist = None
+
         # load main window items
         self.window = self.builder.get_object('main_window')
         self.contentlist = self.builder.get_object('filestore')
         self.contenttree = self.builder.get_object('fileview')
+
         # create lists and connect actions
         self.connectui()
         self.listfiles(self.settings.get_string("folder-path"))
         self.run()
 
     def do_get_settings_ui(self):
-        """Return the applet settings with given uuid"""
+        """ Return the applet settings with given uuid """
         global UUID
         UUID = self.uuid
         return PyLaunchSettings(self.get_applet_settings(self.uuid))
 
     def do_supports_settings(self):
-        """Return True if support setting through Budgie Setting,
-        False otherwise.
-        """
+        """ Tell budgie we support settings through Budgie Settings """
         return True
 
     def connectui(self):
-        """ connect all the window wisgets """
+        """ connect all the window widgets """
+        cell = Gtk.CellRendererText()
+        filecolumn = Gtk.TreeViewColumn('PyLaunch Shortcuts', cell, text=0)
+
         # main window actions
         self.window.connect('destroy', self.quit)
         self.window.connect('drag-end', self.save_position)
-        cell = Gtk.CellRendererText()
-        filecolumn = Gtk.TreeViewColumn('PyLaunch Shortcuts', cell, text=0)
         self.contenttree.connect('row-activated', self.loadselection)
         self.contenttree.connect('button-release-event', self.buttonclick)
         self.contenttree.append_column(filecolumn)
         self.contenttree.set_model(self.contentlist)
+
         # list default dir on startup
         if not os.path.isdir(self.settings.get_string("folder-path")):
             os.makedirs(self.settings.get_string("folder-path"))
