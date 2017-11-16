@@ -139,6 +139,9 @@ class PyLaunchApplet(Budgie.Applet):
 
         # main window actions
         self.window.connect('destroy', self.quit)
+        self.window.connect('focus', self.save_position)
+        self.window.connect('window-state-event', self.save_position)
+        self.window.connect('button-release-event', self.save_position)
         self.window.connect('drag-end', self.save_position)
         self.contenttree.connect('row-activated', self.loadselection)
         self.contenttree.connect('button-release-event', self.buttonclick)
@@ -166,16 +169,6 @@ class PyLaunchApplet(Budgie.Applet):
                 return actor
         return
 
-    def showme(self, *args):
-        """ show a Gtk.Window """
-        self.listfiles(self.settings.get_string("folder-path"))
-        args[0].show()
-
-    def hideme(self, *args):
-        """ hide a Gtk.Window """
-        self.listfiles(self.settings.get_string("folder-path"))
-        args[0].hide()
-
     def right_click_event(self, icon, button, time):
         return
 
@@ -201,7 +194,7 @@ class PyLaunchApplet(Budgie.Applet):
             pass
         return
 
-    def save_position(self):
+    def save_position(self, actor, event):
         """ save the main window position """
         self.settings.set_int("root-x", self.window.get_position().root_x)
         self.settings.set_int("root-y", self.window.get_position().root_y)
@@ -213,16 +206,10 @@ class PyLaunchApplet(Budgie.Applet):
     def delete_event(self, window, event):
         """ Hide the window then the close button is clicked """
         global WINDOWOPEN
-        self.save_position()
+        self.save_position(self.window, 'hiding')
         self.window.hide_on_delete()
         WINDOWOPEN = False
         return True
-
-    def closepop(self, actor):
-        """ hide the error popup window """
-        if actor == self.popbutton:
-            self.hideme(self.popwindow)
-        return
 
     def loadselection(self, *args):
         """ load selected files into tag editor """
