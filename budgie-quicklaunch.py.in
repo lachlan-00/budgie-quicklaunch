@@ -139,10 +139,7 @@ class PyLaunchApplet(Budgie.Applet):
 
         # main window actions
         self.window.connect('destroy', self.quit)
-        self.window.connect('focus', self.save_position)
-        self.window.connect('window-state-event', self.save_position)
-        self.window.connect('button-release-event', self.save_position)
-        self.window.connect('drag-end', self.save_position)
+        self.window.connect('configure-event', self.save_position)
         self.contenttree.connect('row-activated', self.loadselection)
         self.contenttree.connect('button-release-event', self.buttonclick)
         self.contenttree.append_column(filecolumn)
