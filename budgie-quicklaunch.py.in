@@ -193,17 +193,19 @@ class PyLaunchApplet(Budgie.Applet):
 
     def save_position(self, actor, event):
         """ save the main window position """
-        self.settings.set_int("root-x", self.window.get_position().root_x)
-        self.settings.set_int("root-y", self.window.get_position().root_y)
-        self.settings.set_int("height", self.window.get_size().height)
-        self.settings.set_int("width", self.window.get_size().width)
-        self.listfiles(self.settings.get_string("folder-path"))
+        global WINDOWOPEN
+        if WINDOWOPEN:
+            self.settings.set_int("root-x", self.window.get_position().root_x)
+            self.settings.set_int("root-y", self.window.get_position().root_y)
+            self.settings.set_int("height", self.window.get_size().height)
+            self.settings.set_int("width", self.window.get_size().width)
+            self.listfiles(self.settings.get_string("folder-path"))
         return
 
     def delete_event(self, window, event):
         """ Hide the window then the close button is clicked """
         global WINDOWOPEN
-        self.save_position(self.window, 'hiding')
+        #self.save_position(self.window, 'hiding')
         self.window.hide_on_delete()
         WINDOWOPEN = False
         return True
