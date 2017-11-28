@@ -35,5 +35,10 @@
       <default>600</default>
       <range min='100' max='10000'/>
     </key>
+    <key type="b" name="lock-switch">
+      <default>false</default>
+      <summary>Lock window</summary>
+      <description>Lock the quick launch size and position</description>
+    </key>
   </schema>
 </schemalist>

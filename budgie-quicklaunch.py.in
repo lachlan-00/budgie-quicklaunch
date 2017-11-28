@@ -68,15 +68,21 @@ class PyLaunchSettings(Gtk.Grid):
         entry = Gtk.Entry()
         entry.set_width_chars(40)
         entry.set_text(setting.get_string("folder-path"))
+        lock_label = Gtk.Label(_("Lock Position"), halign=Gtk.Align.START)
+        lock_switch = Gtk.Switch(halign=Gtk.Align.END, hexpand=True)
 
         # Attach to settings grid
         self.attach(label, 0, 0, 1, 1)
         self.attach(entry, 0, 1, 2, 1)
+        self.attach(lock_label, 0, 2, 1, 1)
+        self.attach(lock_switch, 1, 2 ,1, 1)
 
         # Bind dconf setting to the entry box
         setting.bind("folder-path", entry, 'text',
                      Gio.SettingsBindFlags.DEFAULT)
 
+        setting.bind("lock-switch", lock_switch, "active",
+                     Gio.SettingsBindFlags.DEFAULT)
         self.show_all()
 
 
@@ -194,18 +200,19 @@ class PyLaunchApplet(Budgie.Applet):
     def save_position(self, actor, event):
         """ save the main window position """
         global WINDOWOPEN
-        if WINDOWOPEN:
-            self.settings.set_int("root-x", self.window.get_position().root_x)
-            self.settings.set_int("root-y", self.window.get_position().root_y)
-            self.settings.set_int("height", self.window.get_size().height)
-            self.settings.set_int("width", self.window.get_size().width)
-            self.listfiles(self.settings.get_string("folder-path"))
+        if not self.settings.get_boolean("lock-switch"):
+            if WINDOWOPEN:
+                self.settings.set_int("root-x", self.window.get_position().root_x)
+                self.settings.set_int("root-y", self.window.get_position().root_y)
+                self.settings.set_int("height", self.window.get_size().height)
+                self.settings.set_int("width", self.window.get_size().width)
+                self.listfiles(self.settings.get_string("folder-path"))
         return
 
     def delete_event(self, window, event):
         """ Hide the window then the close button is clicked """
         global WINDOWOPEN
-        #self.save_position(self.window, 'hiding')
+        self.set_position()
         self.window.hide_on_delete()
         WINDOWOPEN = False
         return True
